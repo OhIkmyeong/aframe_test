@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스택오버플로우꺼</title>
+    <link rel="stylesheet" type="text/css" href="./style/style.css"/>
+    <script src="https://aframe.io/releases/latest/aframe.min.js"></script>
+</head>
+<body>
+    <div id="btns">
+        <button id="btn-pause">일시정지</button>
+        <button id="btn-play">재생</button>
+    </div>
+
+<a-scene id="vr-scene">
+  <a-assets>
+    <video
+        controls
+        id="vid"
+        src="https://cdn.glitch.com/8935d2ed-c243-47e6-a74a-c275e93b7f20%2Fcity-4096-mp4-30fps-x264-ffmpeg.mp4"
+        crossorigin="anonymous"
+        autoplay="false"
+        loop="true"
+        style="display: none"
+    ></video>
+  </a-assets>
+
+  <a-entity
+    geometry="primitive: sphere;
+                      radius: 5000;
+                      segmentsWidth: 64;
+                      segmentsHeight: 64;"
+    material="shader: flat; src: #vid;"
+    scale="-1 1 1"
+  >
+  </a-entity>
+</a-scene>
+
+<section id="sect_skip"></section><!-- sect_skip -->
+<section id="sect_bar">
+    <div id="bar"></div>
+</section>
+
+<script>
+    const vid = document.getElementById('vid');
+    const $play_init = document.getElementById('play-button');
+    const $play = document.getElementById('btn-play'); 
+    const $pause = document.getElementById('btn-pause'); 
+    const $btns = document.getElementById('btns');
+
+    let dur = undefined;
+
+    const $sect_bar= document.getElementById('sect_bar'); 
+    const $bar = document.getElementById('bar');
+
+    const $skip = document.getElementById('sect_skip');
+
+    let play_bar;
+
+    function update_play_bar(){
+        const curr = vid.currentTime;
+        const scX = curr / dur;
+        change_scaleX(scX);
+    }//update_play_bar
+
+    function change_scaleX(scX){$bar.style.transform = `scaleX(${scX})`;}
+
+    $sect_bar.addEventListener('click',(e)=>{
+        const bar_wid = $sect_bar.offsetWidth;
+        const posX = e.offsetX;
+        const scX = posX / bar_wid;
+        vid.pause();
+        clearInterval(play_bar);
+        change_scaleX(scX);
+        const time_clicked = scX * dur;
+        vid.currentTime = time_clicked;
+    });
+
+    $pause.addEventListener("click",()=>{
+        vid.pause();
+        clearInterval(play_bar);
+    });
+
+    $play.addEventListener("click",()=>{
+        vid.play();
+        dur = vid.duration;
+        if(play_bar){clearInterval(play_bar);}
+        if(!$skip.innerHTML){make_skip_btns();}
+        play_bar = setInterval(update_play_bar,50);
+    });
+</script>
+<script>
+    const skips = [0.25,1,2.5,5,6,7.5];
+    function make_skip_btns(){
+        const $frag_skip = document.createDocumentFragment();
+        skips.forEach(skipTime =>{
+            const $btn = document.createElement('BUTTON');
+            $btn.dataset.skip = skipTime;
+            const left  = skipTime / dur * $skip.offsetWidth;
+            $btn.style.left = `${left}px`;
+            $frag_skip.appendChild($btn);
+        });
+        $skip.appendChild($frag_skip);
+    }//make_skip_btns
+
+    $skip.addEventListener('click',(e)=>{
+        const target = e.target;
+        if(target.tagName!=="BUTTON"){return;}
+        const time_clicked = target.dataset.skip;
+        const scX =  time_clicked / dur;
+
+        vid.pause();
+        clearInterval(play_bar);
+        change_scaleX(scX);
+        vid.currentTime = time_clicked;
+    });
+</script>
+</body>
+</html>
